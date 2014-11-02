@@ -26,7 +26,6 @@
 //      overwrite:
 //          cat mywallpaper.png | mojimg -pos rightbottom -fg #f00 -output hello.png "Hello, 世界"
 //
-// TODO: jpeg
 // TODO: alpha
 // TODO: pretty cl options
 
@@ -45,6 +44,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"image/jpeg"
 	"image/png"
 
 	"code.google.com/p/draw2d/draw2d"
@@ -123,7 +123,7 @@ func main() {
 			gc.Clear()
 		}
 	} else {
-		baseimg, err := png.Decode(os.Stdin)
+		baseimg, _, err := image.Decode(os.Stdin)
 		if err != nil {
 			log.Println("failed to load base image from stdin")
 			log.Fatal(err)
@@ -351,7 +351,14 @@ func saveImage(filename string, m image.Image) {
 		defer f.Close()
 
 		b := bufio.NewWriter(f)
-		err = png.Encode(b, m)
+
+		if lower := strings.ToLower(filename); strings.HasSuffix(lower, "jpg") || strings.HasSuffix(lower, "jpeg") {
+			log.Println("jpg")
+			err = jpeg.Encode(b, m, &jpeg.Options{jpeg.DefaultQuality})
+		} else {
+			log.Println("png")
+			err = png.Encode(b, m)
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
