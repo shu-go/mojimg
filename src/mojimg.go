@@ -56,8 +56,16 @@ type ChipType struct {
 	X, Y  int
 }
 
+type OutputType uint
+
+const (
+	PNG OutputType = iota
+	JPEG
+)
+
 func main() {
 	var output string
+	var outputType OutputType
 	var fontname string
 	var width, height int
 	var bg, fg color.RGBA
@@ -65,10 +73,12 @@ func main() {
 
 	// flags parsing
 
+	var outputTypeFlag string
 	var posFlag string
 	var bgFlag, fgFlag string
 
 	flag.StringVar(&output, "output", "", "generated file name")
+	flag.StringVar(&outputTypeFlag, "type", "png", "png or jpg. for stdout. (if -output is given, -type is set to the extension)")
 	flag.IntVar(&width, "width", 1024, "image width")
 	flag.IntVar(&height, "height", 768, "image height")
 	flag.StringVar(&posFlag, "pos", "topleft", "combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]")
@@ -82,6 +92,17 @@ func main() {
 	}
 
 	// digest into internal values
+
+	// outputType
+	if strings.Contains(output, ".") {
+		outputTypeFlag = strings.ToLower(output[strings.LastIndex(output, ".")+1:])
+	}
+	switch outputTypeFlag {
+	case "jpg":
+		outputType = JPEG
+	default:
+		outputType = PNG
+	}
 
 	// bg, fg
 	if strings.HasPrefix(bgFlag, "#") {
@@ -206,7 +227,7 @@ func main() {
 		draw.Draw(renderedImage, destr, chip.Image, image.Point{0, 0}, draw.Over)
 	}
 
-	saveImage(output, renderedImage)
+	saveImage(output, outputType, renderedImage)
 }
 
 func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
@@ -335,12 +356,19 @@ func parseRGBA(s string) (color.RGBA, error) {
 	return rgba, nil
 }
 
-func saveImage(filename string, m image.Image) {
+func saveImage(filename string, outputType OutputType, m image.Image) {
 	if len(filename) == 0 {
 		b := os.Stdout
-		err := png.Encode(b, m)
-		if err != nil {
-			log.Fatal(err)
+		if outputType == JPEG {
+			err := jpeg.Encode(b, m, &jpeg.Options{jpeg.DefaultQuality})
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			err := png.Encode(b, m)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	} else {
 		filePath := filename
@@ -352,12 +380,18 @@ func saveImage(filename string, m image.Image) {
 
 		b := bufio.NewWriter(f)
 
-		if lower := strings.ToLower(filename); strings.HasSuffix(lower, "jpg") || strings.HasSuffix(lower, "jpeg") {
+		if outputType == JPEG {
 			log.Println("jpg")
-			err = jpeg.Encode(b, m, &jpeg.Options{jpeg.DefaultQuality})
+			err := jpeg.Encode(b, m, &jpeg.Options{jpeg.DefaultQuality})
+			if err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			log.Println("png")
 			err = png.Encode(b, m)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		if err != nil {
 			log.Fatal(err)
