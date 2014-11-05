@@ -51,7 +51,7 @@ import (
 	"github.com/andrew-d/go-termutil"
 )
 
-type ChipType struct {
+type Chip struct {
 	Image *image.RGBA
 	X, Y  int
 }
@@ -162,9 +162,9 @@ func main() {
 	// render
 
 	// chip
-	chips := make([]*ChipType, 0)
+	chips := make([]*Chip, 0)
 	for _, t := range texts {
-		chip := &ChipType{Image: makeChipImage(t, fontname, bg, fg), X: 0, Y: 0}
+		chip := &Chip{Image: makeChipImage(t, fontname, bg, fg), X: 0, Y: 0}
 		chips = append(chips, chip)
 		//saveImage(fmt.Sprintf("chip%02d.png", i), chip.Image)
 	}
