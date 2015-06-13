@@ -240,6 +240,9 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 	log.Println("text ", text)
 
 	chipWidth, chipHeight := int(math.Ceil(right)), int(math.Ceil(bottom-top))
+	if chipWidth < 0 || chipHeight < 0 {
+		return test
+	}
 	//log.Println("chipImage size ", chipWidth, chipHeight)
 	chipImage := image.NewRGBA(image.Rect(0, 0, chipWidth, chipHeight))
 	gc = draw2d.NewGraphicContext(chipImage)
