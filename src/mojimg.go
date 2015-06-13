@@ -32,9 +32,9 @@
 package main
 
 import (
-	//"fmt"
 	"bufio"
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -146,8 +146,7 @@ func main() {
 	} else {
 		baseimg, _, err := image.Decode(os.Stdin)
 		if err != nil {
-			log.Println("failed to load base image from stdin")
-			log.Fatal(err)
+			log.Fatalf("Failed to load base image from stdin: %v", err)
 		}
 		b := baseimg.Bounds()
 		width = b.Max.X - b.Min.X
@@ -156,8 +155,6 @@ func main() {
 		renderedImage = image.NewRGBA(image.Rect(0, 0, width, height))
 		draw.Draw(renderedImage, renderedImage.Bounds(), baseimg, image.Point{0, 0}, draw.Src)
 	}
-
-	log.Println("screen ", height, width)
 
 	// render
 
@@ -170,13 +167,11 @@ func main() {
 	}
 
 	// positioning
-	log.Println("positioning postv ", posv)
 	switch posv {
 	case "top":
 		y := 0
 		for _, c := range chips {
 			c.Y = y
-			log.Println("positioning chip Y ", c.Y)
 			y += c.Image.Bounds().Max.Y
 		}
 	case "middle":
@@ -189,7 +184,6 @@ func main() {
 		y := (height - totalHeight) / 2
 		for _, c := range chips {
 			c.Y = y
-			log.Println("positioning chip Y ", c.Y)
 			y += c.Image.Bounds().Max.Y
 		}
 	case "bottom":
@@ -220,8 +214,6 @@ func main() {
 
 	// pasting chips
 	for _, chip := range chips {
-		log.Println("drawing chip ", chip.X, chip.Y)
-		log.Println("chip rect ", chip.Image.Bounds())
 		b := chip.Image.Bounds()
 		destr := image.Rect(chip.X, chip.Y, chip.X+(b.Max.X-b.Min.X), chip.Y+(b.Max.Y-b.Min.Y))
 		draw.Draw(renderedImage, destr, chip.Image, image.Point{0, 0}, draw.Over)
@@ -236,8 +228,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 	gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
 	gc.SetFontSize(48)
 	_ /*left*/, top, right, bottom := gc.GetStringBounds(text)
-	//log.Println("test ", left, top, right, bottom)
-	log.Println("text ", text)
 
 	chipWidth, chipHeight := int(math.Ceil(right)), int(math.Ceil(bottom-top))
 	if chipWidth < 0 || chipHeight < 0 {
@@ -247,7 +237,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 	chipImage := image.NewRGBA(image.Rect(0, 0, chipWidth, chipHeight))
 	gc = draw2d.NewGraphicContext(chipImage)
 
-	log.Println("fg ", fg)
 	gc.SetFillColor(fg)
 	gc.SetFontSize(48)
 	gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
@@ -332,7 +321,6 @@ func parseRGBA(s string) (color.RGBA, error) {
 			hasAlpha = true
 		}
 	}
-	log.Println("parse rgba ", lens, compLen, hasAlpha)
 
 	p := 0
 	compList := []*uint8{&r, &g, &b, &a}
@@ -342,12 +330,10 @@ func parseRGBA(s string) (color.RGBA, error) {
 		}
 
 		compS := strings.Repeat(s[p:p+compLen], compRep)
-		log.Println("compS", compS)
 
 		comp64, err := strconv.ParseUint(compS, 16, 8)
 		if err != nil {
-			log.Println("failed to parsing ", s, p, compS)
-			return rgba, err
+			return rgba, fmt.Errorf("failed to parse (%v): %v", compS, err)
 		}
 		*comp = uint8(comp64)
 
@@ -384,13 +370,11 @@ func saveImage(filename string, outputType OutputType, m image.Image) {
 		b := bufio.NewWriter(f)
 
 		if outputType == JPEG {
-			log.Println("jpg")
 			err := jpeg.Encode(b, m, &jpeg.Options{jpeg.DefaultQuality})
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			log.Println("png")
 			err = png.Encode(b, m)
 			if err != nil {
 				log.Fatal(err)
