@@ -2,7 +2,7 @@
 //
 // preparation:
 //		1. Put a ttf file in "font" folder
-//         The name of ttf file must ends with "mr.ttf" (this is a restriction of draw2d)
+//         The name of ttf file must end with "mr.ttf" (this is a restriction of draw2d)
 //           font/
 //             YOURTTFFILEmr.ttf
 //           src/
