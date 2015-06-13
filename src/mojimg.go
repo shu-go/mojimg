@@ -9,7 +9,7 @@
 //			   mojimg.go
 //
 //		2. Do go get dependencies:
-//           go get code.google.com/p/draw2d/draw2d
+//           go get github.com/llgcode/draw2d
 //           go get github.com/andrew-d/go-termutil
 //
 //      3. Do go build src/mojimmg.go
@@ -47,8 +47,8 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"code.google.com/p/draw2d/draw2d"
 	"github.com/andrew-d/go-termutil"
+	"github.com/llgcode/draw2d"
 )
 
 type Chip struct {
