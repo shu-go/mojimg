@@ -83,7 +83,7 @@ func main() {
 	flag.IntVar(&height, "height", 768, "image height")
 	flag.StringVar(&posFlag, "pos", "topleft", "combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]")
 	flag.StringVar(&fontname, "font", "ipag", "ttf file name without suffix \"mr.ttf\"")
-	flag.StringVar(&bgFlag, "bg", "#0000", "#RGBA")
+	flag.StringVar(&bgFlag, "bg", "#ffff", "#RGBA")
 	flag.StringVar(&fgFlag, "fg", "#000f", "#RGBA")
 	flag.Parse()
 
