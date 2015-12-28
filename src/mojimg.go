@@ -50,8 +50,9 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"code.google.com/p/draw2d/draw2d"
 	"github.com/andrew-d/go-termutil"
+	"github.com/llgcode/draw2d"
+	"github.com/llgcode/draw2d/draw2dimg"
 )
 
 type Chip struct {
@@ -146,7 +147,7 @@ func main() {
 
 		// clear
 		if bg.A != 0 {
-			gc := draw2d.NewGraphicContext(renderedImage)
+			gc := draw2dimg.NewGraphicContext(renderedImage)
 			gc.SetFillColor(bg)
 			gc.Clear()
 		}
@@ -313,7 +314,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 	var chipWidth, chipHeight int = 1, 1
 	var top, right, bottom float64 = 0, 0, 0
 	test := image.NewRGBA(image.Rect(0, 0, 1, 1))
-	gc := draw2d.NewGraphicContext(test)
+	gc := draw2dimg.NewGraphicContext(test)
 	if len(textWOEmojis) != 0 {
 		gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
 		gc.SetFontSize(48)
@@ -349,7 +350,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 	//
 
 	chipImage := image.NewRGBA(image.Rect(0, 0, chipWidth, chipHeight))
-	gc = draw2d.NewGraphicContext(chipImage)
+	gc = draw2dimg.NewGraphicContext(chipImage)
 	gc.SetFillColor(fg)
 	gc.SetFontSize(48)
 	gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
