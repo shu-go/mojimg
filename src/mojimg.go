@@ -35,9 +35,12 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	//	"io/ioutil"
 	"log"
 	"math"
+	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -47,8 +50,8 @@ import (
 	"image/jpeg"
 	"image/png"
 
+	"code.google.com/p/draw2d/draw2d"
 	"github.com/andrew-d/go-termutil"
-	"github.com/llgcode/draw2d"
 )
 
 type Chip struct {
@@ -61,6 +64,10 @@ type OutputType uint
 const (
 	PNG OutputType = iota
 	JPEG
+)
+
+var (
+	emojiRE *regexp.Regexp = regexp.MustCompile("(::[^:]+::)")
 )
 
 func main() {
@@ -222,31 +229,187 @@ func main() {
 	saveImage(output, outputType, renderedImage)
 }
 
+func rangeOfFoundStringIdxPairs(r [][]int) [][]int {
+	result := [][]int{}
+	for _, v := range r {
+		result = append(result, []int{v[0], v[1]})
+	}
+	return result
+}
+
 func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
+	//
+	// determine what to render
+	//
+
+	textWOEmojis := ""
+	emojiRepos := make(map[string]image.Image)
+
+	m := emojiRE.FindAllStringSubmatchIndex(text, -1)
+
+	if len(m) == 0 {
+		textWOEmojis = text
+	} else {
+		prevEnd := 0
+		for _, v := range rangeOfFoundStringIdxPairs(m) {
+			textWOEmojis += text[prevEnd:v[0]]
+			prevEnd = v[1]
+		}
+		if prevEnd < len(text)-1 {
+			textWOEmojis += text[prevEnd:]
+		}
+
+		// download images
+		/*
+			dir, err := os.Getwd()
+			if err != nil {
+				log.Fatalf("Failed to get working directory: %v", err)
+			}
+		*/
+		for _, v := range rangeOfFoundStringIdxPairs(m) {
+			name := text[v[0]+2 : v[1]-2] // "::smile::" => "smile"
+			///*DEBUG*/ log.Printf("downloading %v\n", name)
+			if _, ok := emojiRepos[name]; ok {
+				continue
+			}
+
+			resp, err := http.Get(fmt.Sprintf("http://www.emoji-cheat-sheet.com/graphics/emojis/%s.png", name))
+			if err != nil {
+				log.Fatalf("Failed to download emoji file of %v: %v", name, err)
+			}
+			defer resp.Body.Close()
+
+			emojiImg, _, err := image.Decode(resp.Body)
+			if err != nil {
+				log.Fatalf("Failed to load image of %v: %v", name, err)
+			}
+
+			/*
+				data, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					log.Fatalf("Failed to read content of %v: %v", name, err)
+				}
+
+				tmpfilepath := fmt.Sprintf("%v/%v.png", dir, name)
+				err = ioutil.WriteFile(tmpfilepath, data, os.ModePerm)
+				if err != nil {
+					log.Fatalf("Failed to write content of %v into %v: %v", name, tmpfilepath, err)
+				}
+			*/
+
+			emojiRepos[name] = emojiImg
+		}
+	}
+	///*DEBUG*/ log.Printf("text=%#v\n", text)
+	///*DEBUG*/ log.Printf("m=%#v\n", m)
+	///*DEBUG*/ log.Printf("textWOEmojis=%#v\n", textWOEmojis)
+	///*DEBUG*/ log.Printf("emojiRepos=%#v\n", emojiRepos)
+
+	//
+	// calc the size of a chip
+	//
+
+	// text
+	var chipWidth, chipHeight int = 1, 1
+	var top, right, bottom float64 = 0, 0, 0
 	test := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	gc := draw2d.NewGraphicContext(test)
-	gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
-	gc.SetFontSize(48)
-	_ /*left*/, top, right, bottom := gc.GetStringBounds(text)
+	if len(textWOEmojis) != 0 {
+		gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
+		gc.SetFontSize(48)
+		_ /*left*/, top, right, bottom = gc.GetStringBounds(textWOEmojis)
+		chipWidth, chipHeight = int(math.Ceil(right)), int(math.Ceil(bottom-top))
+	}
+	///*DEBUG*/ log.Println("chipImage size ", chipWidth, chipHeight)
 
-	chipWidth, chipHeight := int(math.Ceil(right)), int(math.Ceil(bottom-top))
+	// emojis
+	for _, v := range rangeOfFoundStringIdxPairs(m) {
+		name := text[v[0]+2 : v[1]-2] // "::smile::" => "smile"
+		if emojiImg, ok := emojiRepos[name]; ok {
+			b := emojiImg.Bounds()
+			ew := b.Max.X - b.Min.X
+			eh := b.Max.Y - b.Min.Y
+
+			// height ... max
+			if chipHeight < eh {
+				chipHeight = eh
+			}
+			// width ... sum
+			chipWidth += ew
+		}
+	}
+
+	///*DEBUG*/ log.Println("chipImage size ", chipWidth, chipHeight)
 	if chipWidth < 0 || chipHeight < 0 {
 		return test
 	}
-	//log.Println("chipImage size ", chipWidth, chipHeight)
+
+	//
+	// render
+	//
+
 	chipImage := image.NewRGBA(image.Rect(0, 0, chipWidth, chipHeight))
 	gc = draw2d.NewGraphicContext(chipImage)
-
 	gc.SetFillColor(fg)
 	gc.SetFontSize(48)
 	gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
 
-	var x, y float64
-	x, y = 0, -top
-	//log.Println("chipImage translate ", x, y)
-	gc.Translate(x, y)
+	prevEndIdx := 0
+	prevEndX := float64(0)
+	for _, v := range rangeOfFoundStringIdxPairs(m) {
+		///*DEBUG*/ log.Printf("  %v: prevEndIdx=%#v\n", i, prevEndIdx)
+		///*DEBUG*/ log.Printf("  %v: prevEndX=%#v\n", i, prevEndX)
+		///*DEBUG*/ log.Printf("  %v: top=%#v\n", i, top)
 
-	gc.FillString(text)
+		// render text before each emoji
+		if v[0] != 0 {
+			///*DEBUG*/ log.Printf("    text:\n")
+			///*DEBUG*/ log.Printf("     v=%#v\n", v)
+			///*DEBUG*/ log.Printf("     text=%#v\n", text[prevEndIdx:v[0]])
+
+			// gc.Translate(prevEndX, float64(-top))
+			// tw := gc.FillString(text[prevEndIdx : v[0]-1])
+			tw := gc.FillStringAt(text[prevEndIdx:v[0]], prevEndX, float64(-top))
+			prevEndX += tw
+
+			///*DEBUG*/ log.Printf("     tw=%#v => %#v\n", tw, prevEndX)
+		}
+
+		// render an emoji
+		name := text[v[0]+2 : v[1]-2] // "::smile::" => "smile"
+		if emojiImg, ok := emojiRepos[name]; ok {
+			///*DEBUG*/ log.Printf("    emoji:\n")
+
+			b := emojiImg.Bounds()
+			ew := b.Max.X - b.Min.X
+			eh := b.Max.Y - b.Min.Y
+
+			///*DEBUG*/ log.Printf("     b=%#v\n", b)
+
+			destB := chipImage.Bounds()
+			destB.Min.X = int(prevEndX)
+			destB.Min.Y = 0
+			destB.Max.X = int(prevEndX) + ew
+			destB.Max.Y = eh
+
+			///*DEBUG*/ log.Printf("     destB=%#v\n", destB)
+
+			draw.Draw(chipImage, destB, emojiImg, image.Point{0, 0}, draw.Src)
+
+			prevEndX += float64(ew)
+
+			///*DEBUG*/ log.Printf("     ew=%#v => prevEndX=%#v\n", ew, prevEndX)
+
+		} else {
+			log.Fatalf("Internal inconsistency about emoji %v", name)
+		}
+
+		prevEndIdx = v[1]
+	}
+	if prevEndIdx != len(text)-1 {
+		gc.Translate(prevEndX, float64(-top))
+		gc.FillString(text[prevEndIdx:])
+	}
 
 	return chipImage
 }
@@ -379,9 +542,6 @@ func saveImage(filename string, outputType OutputType, m image.Image) {
 			if err != nil {
 				log.Fatal(err)
 			}
-		}
-		if err != nil {
-			log.Fatal(err)
 		}
 		err = b.Flush()
 		if err != nil {
