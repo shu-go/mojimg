@@ -1,3 +1,1 @@
-pushd src
-go build -o ../mojimg.exe
-popd
+go build -ldflags "-s -w" ./...
