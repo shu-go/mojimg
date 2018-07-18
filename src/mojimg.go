@@ -274,7 +274,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 				continue
 			}
 
-			resp, err := http.Get(fmt.Sprintf("http://www.emoji-cheat-sheet.com/graphics/emojis/%s.png", name))
+			resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/arvida/emoji-cheat-sheet.com/master/public/graphics/emojis/%s.png", name))
 			if err != nil {
 				log.Fatalf("Failed to download emoji file of %v: %v", name, err)
 			}
