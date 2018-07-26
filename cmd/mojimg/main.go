@@ -33,7 +33,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	//	"io/ioutil"
 	"log"
@@ -50,6 +49,7 @@ import (
 	"image/jpeg"
 	"image/png"
 
+	"bitbucket.org/shu_go/gli"
 	"github.com/andrew-d/go-termutil"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
@@ -71,41 +71,32 @@ var (
 	emojiRE *regexp.Regexp = regexp.MustCompile("(::[^:]+::)")
 )
 
-func main() {
-	var output string
-	var outputType OutputType
-	var fontname string
-	var width, height int
-	var bg, fg color.RGBA
-	var posv, posh string
+type globalCmd struct {
+	Output string `cli:"output=FILE_NAME" help:"generated file name"`
+	Type   string `cli:"type=IMAGE_FILE_TYPE" default:"png" help:"png or jpg. for stdout. (if -output is given, -type is set to the extension)"`
 
-	// flags parsing
+	Width  int `cli:"width" default:"1024" help:"image width"`
+	Height int `cli:"height" default:"768" help:"image height"`
 
-	var outputTypeFlag string
-	var posFlag string
-	var bgFlag, fgFlag string
+	Pos string `cli:"pos" default:"topleft" help:"combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]"`
 
-	flag.StringVar(&output, "output", "", "generated file name")
-	flag.StringVar(&outputTypeFlag, "type", "png", "png or jpg. for stdout. (if -output is given, -type is set to the extension)")
-	flag.IntVar(&width, "width", 1024, "image width")
-	flag.IntVar(&height, "height", 768, "image height")
-	flag.StringVar(&posFlag, "pos", "topleft", "combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]")
-	flag.StringVar(&fontname, "font", "ipag", "ttf file name without suffix \"mr.ttf\"")
-	flag.StringVar(&bgFlag, "bg", "#ffff", "#RGBA")
-	flag.StringVar(&fgFlag, "fg", "#000f", "#RGBA")
-	flag.Parse()
+	FontName string `cli:"font" default:"ipag" help:"ttf file name without suffix \"mr.ttf\""`
 
-	if flag.NArg() == 0 {
-		log.Fatal("no text passed")
+	BG string `cli:"bg" default:"#ffff" , help:"#RGBA"`
+	FG string `cli:"fg" default:"#000f" , help:"#RGBA"`
+}
+
+func (cmd globalCmd) Run(texts []string) error {
+	if len(texts) == 0 {
+		return fmt.Errorf("no text passed")
 	}
-
-	// digest into internal values
 
 	// outputType
-	if strings.Contains(output, ".") {
-		outputTypeFlag = strings.ToLower(output[strings.LastIndex(output, ".")+1:])
+	outputType := PNG
+	if strings.Contains(cmd.Output, ".") {
+		cmd.Type = strings.ToLower(cmd.Output[strings.LastIndex(cmd.Output, ".")+1:])
 	}
-	switch outputTypeFlag {
+	switch cmd.Type {
 	case "jpg":
 		outputType = JPEG
 	default:
@@ -113,26 +104,23 @@ func main() {
 	}
 
 	// bg, fg
-	if strings.HasPrefix(bgFlag, "#") {
-		bgFlag = bgFlag[1:]
+	if strings.HasPrefix(cmd.BG, "#") {
+		cmd.BG = cmd.BG[1:]
 	}
-	if strings.HasPrefix(fgFlag, "#") {
-		fgFlag = fgFlag[1:]
+	if strings.HasPrefix(cmd.FG, "#") {
+		cmd.FG = cmd.FG[1:]
 	}
-	bg, err := parseRGBA(bgFlag)
+	bg, err := parseRGBA(cmd.BG)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("parse BG: %v", err)
 	}
-	fg, err = parseRGBA(fgFlag)
+	fg, err := parseRGBA(cmd.FG)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("parse FG: %v", err)
 	}
 
 	// posv, posh
-	posv, posh = parsePosition(posFlag)
-
-	// texts
-	texts := append(make([]string, 0), flag.Args()...)
+	posv, posh := parsePosition(cmd.Pos)
 
 	// global settings
 
@@ -143,7 +131,7 @@ func main() {
 	var renderedImage *image.RGBA
 
 	if termutil.Isatty(os.Stdin.Fd()) {
-		renderedImage = image.NewRGBA(image.Rect(0, 0, width, height))
+		renderedImage = image.NewRGBA(image.Rect(0, 0, cmd.Width, cmd.Height))
 
 		// clear
 		if bg.A != 0 {
@@ -157,10 +145,10 @@ func main() {
 			log.Fatalf("Failed to load base image from stdin: %v", err)
 		}
 		b := baseimg.Bounds()
-		width = b.Max.X - b.Min.X
-		height = b.Max.Y - b.Min.Y
+		cmd.Width = b.Max.X - b.Min.X
+		cmd.Height = b.Max.Y - b.Min.Y
 
-		renderedImage = image.NewRGBA(image.Rect(0, 0, width, height))
+		renderedImage = image.NewRGBA(image.Rect(0, 0, cmd.Width, cmd.Height))
 		draw.Draw(renderedImage, renderedImage.Bounds(), baseimg, image.Point{0, 0}, draw.Src)
 	}
 
@@ -169,7 +157,7 @@ func main() {
 	// chip
 	chips := make([]*Chip, 0)
 	for _, t := range texts {
-		chip := &Chip{Image: makeChipImage(t, fontname, bg, fg), X: 0, Y: 0}
+		chip := &Chip{Image: makeChipImage(t, cmd.FontName, bg, fg), X: 0, Y: 0}
 		chips = append(chips, chip)
 		//saveImage(fmt.Sprintf("chip%02d.png", i), chip.Image)
 	}
@@ -189,13 +177,13 @@ func main() {
 			totalHeight += c.Image.Bounds().Max.Y
 		}
 		// positioning
-		y := (height - totalHeight) / 2
+		y := (cmd.Height - totalHeight) / 2
 		for _, c := range chips {
 			c.Y = y
 			y += c.Image.Bounds().Max.Y
 		}
 	case "bottom":
-		y := height
+		y := cmd.Height
 		for i, _ := range chips {
 			c := chips[len(chips)-i-1]
 			y -= c.Image.Bounds().Max.Y
@@ -211,12 +199,12 @@ func main() {
 	case "center":
 		for _, c := range chips {
 			b := c.Image.Bounds()
-			c.X = (width - (b.Max.X - b.Min.X)) / 2
+			c.X = (cmd.Width - (b.Max.X - b.Min.X)) / 2
 		}
 	case "right":
 		for _, c := range chips {
 			b := c.Image.Bounds()
-			c.X = (width - (b.Max.X - b.Min.X))
+			c.X = (cmd.Width - (b.Max.X - b.Min.X))
 		}
 	}
 
@@ -227,7 +215,16 @@ func main() {
 		draw.Draw(renderedImage, destr, chip.Image, image.Point{0, 0}, draw.Over)
 	}
 
-	saveImage(output, outputType, renderedImage)
+	return saveImage(cmd.Output, outputType, renderedImage)
+}
+
+func main() {
+	app := gli.New(&globalCmd{})
+	app.Version = "0.2.0"
+	app.Copyright = "(C) 2018 Shuhei Kubota"
+	if err := app.Run(os.Args); err != nil {
+		os.Exit(1)
+	}
 }
 
 func rangeOfFoundStringIdxPairs(r [][]int) [][]int {
@@ -509,25 +506,25 @@ func parseRGBA(s string) (color.RGBA, error) {
 	return rgba, nil
 }
 
-func saveImage(filename string, outputType OutputType, m image.Image) {
+func saveImage(filename string, outputType OutputType, m image.Image) error {
 	if len(filename) == 0 {
 		b := os.Stdout
 		if outputType == JPEG {
 			err := jpeg.Encode(b, m, &jpeg.Options{jpeg.DefaultQuality})
 			if err != nil {
-				log.Fatal(err)
+				return fmt.Errorf("encode: %v", err)
 			}
 		} else {
 			err := png.Encode(b, m)
 			if err != nil {
-				log.Fatal(err)
+				return fmt.Errorf("encode: %v", err)
 			}
 		}
 	} else {
 		filePath := filename
 		f, err := os.Create(filePath)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("create file: %v", err)
 		}
 		defer f.Close()
 
@@ -536,17 +533,19 @@ func saveImage(filename string, outputType OutputType, m image.Image) {
 		if outputType == JPEG {
 			err := jpeg.Encode(b, m, &jpeg.Options{jpeg.DefaultQuality})
 			if err != nil {
-				log.Fatal(err)
+				return fmt.Errorf("encode: %v", err)
 			}
 		} else {
 			err = png.Encode(b, m)
 			if err != nil {
-				log.Fatal(err)
+				return fmt.Errorf("encode: %v", err)
 			}
 		}
 		err = b.Flush()
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("flush file: %v", err)
 		}
 	}
+
+	return nil
 }
