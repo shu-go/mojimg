@@ -219,7 +219,7 @@ func (cmd globalCmd) Run(texts []string) error {
 }
 
 func main() {
-	app := gli.New(&globalCmd{})
+	app := gli.NewWith(&globalCmd{})
 	app.Version = "0.2.0"
 	app.Copyright = "(C) 2018 Shuhei Kubota"
 	if err := app.Run(os.Args); err != nil {
