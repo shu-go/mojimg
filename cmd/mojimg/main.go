@@ -49,10 +49,10 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"bitbucket.org/shu_go/gli"
 	"github.com/andrew-d/go-termutil"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
+	"github.com/shu-go/gli"
 )
 
 type Chip struct {
