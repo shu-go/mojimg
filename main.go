@@ -1,34 +1,3 @@
-// mojimg -- commandline image file generator with text
-//
-// preparation:
-//		1. Put a ttf file in "font" folder
-//         The name of ttf file must end with "mr.ttf" (this is a restriction of draw2d)
-//           font/
-//             YOURTTFFILEmr.ttf
-//           src/
-//			   mojimg.go
-//
-//		2. Do go get dependencies:
-//           go get github.com/llgcode/draw2d
-//           go get github.com/andrew-d/go-termutil
-//
-//      3. Do go build src/mojimmg.go
-//
-// usage:
-//      help:
-//          mojimg -h
-//      simple:
-//          mojimg -pos rightbottom -fg #f00 -output hello.png "Hello, 世界"
-//      multi-line:
-//          mojimg -pos rightbottom -fg #f00 -output hello.png line1 line2 line3
-//      multi-position (with pipe):
-//          mojimg -pos rightbottom -fg #f00 line1  |  mojimg -pos centermiddle -output hello.png line2
-//      overwrite:
-//          cat mywallpaper.png | mojimg -pos rightbottom -fg #f00 -output hello.png "Hello, 世界"
-//
-// TODO: alpha
-// TODO: pretty cl options
-
 package main
 
 import (
@@ -244,11 +213,21 @@ func (cmd globalCmd) Run(texts []string) error {
 	return saveImage(cmd.Output, outputType, renderedImage)
 }
 
+// Version is app version
+var Version string
+
 func main() {
 	app := gli.NewWith(&globalCmd{})
-	app.Version = "0.2.0"
+	app.Name = "mojimg"
+	app.Desc = "commandline image file generator with text"
+	app.Version = Version
+	app.Usage = `1. place a ttf font file
+2. mojimg --font ./myfont.ttf --output output.png text1 text2 ::smile::
+3. cat(or type) output.png | mojimg --font ./myfont.ttf --output output.png --pos cm center-middle-text`
 	app.Copyright = "(C) 2018 Shuhei Kubota"
-	if err := app.Run(os.Args); err != nil {
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
