@@ -88,11 +88,18 @@ type globalCmd struct {
 	FG string `cli:"fg" default:"#000f" , help:"#RGBA"`
 }
 
-func (cmd *globalCmd) Before() {
+func (cmd *globalCmd) Before() error {
+	_, err := os.Stat(cmd.FontPath)
+	if err != nil {
+		return fmt.Errorf("font name %q not found", cmd.FontPath)
+	}
+
 	cmd.fontDir, cmd.fontName = filepath.Split(cmd.FontPath)
 	if cmd.fontDir == "" {
 		cmd.fontDir = "."
 	}
+
+	return nil
 }
 
 func (cmd globalCmd) Run(texts []string) error {
