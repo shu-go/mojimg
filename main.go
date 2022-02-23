@@ -52,6 +52,7 @@ type globalCmd struct {
 
 	FontPath          string `cli:"f,font=FILE" required:"true" env:"MOJIMG_FONT" help:"ttf file path"`
 	fontDir, fontName string
+	FontSize          float64 `cli:"size=NUMBER" default:"24" help:"font size"`
 
 	BG string `cli:"bg" default:"#ffff" help:"#RGBA"`
 	FG string `cli:"fg" default:"#000f" help:"#RGBA"`
@@ -146,7 +147,7 @@ func (cmd globalCmd) Run(texts []string) error {
 	// chip
 	chips := make([]*Chip, 0)
 	for _, t := range texts {
-		img, err := makeChipImage(t, cmd.fontName, bg, fg)
+		img, err := makeChipImage(t, cmd.fontName, cmd.FontSize, bg, fg)
 		if err != nil {
 			return err
 		}
@@ -240,7 +241,7 @@ func rangeOfFoundStringIdxPairs(r [][]int) [][]int {
 	return result
 }
 
-func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error) {
+func makeChipImage(text, fontname string, fontsize float64, bg, fg color.RGBA) (*image.RGBA, error) {
 	//
 	// determine what to render
 	//
@@ -294,7 +295,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 	gc := draw2dimg.NewGraphicContext(test)
 	if len(textWOEmojis) != 0 {
 		gc.SetFontData(draw2d.FontData{Name: fontname, Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleNormal})
-		gc.SetFontSize(48)
+		gc.SetFontSize(fontsize)
 		_ /*left*/, top, right, bottom = gc.GetStringBounds(textWOEmojis)
 		chipWidth, chipHeight = int(math.Ceil(right)), int(math.Ceil(bottom-top))
 	}
@@ -326,7 +327,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 	chipImage := image.NewRGBA(image.Rect(0, 0, chipWidth, chipHeight))
 	gc = draw2dimg.NewGraphicContext(chipImage)
 	gc.SetFillColor(fg)
-	gc.SetFontSize(48)
+	gc.SetFontSize(fontsize)
 	gc.SetFontData(draw2d.FontData{Name: fontname, Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleNormal})
 
 	prevEndIdx := 0
