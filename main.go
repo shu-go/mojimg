@@ -34,8 +34,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	//	"io/ioutil"
-	"log"
 	"math"
 	"net/http"
 	"os"
@@ -52,6 +50,7 @@ import (
 	"github.com/andrew-d/go-termutil"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
+
 	"github.com/shu-go/gli"
 )
 
@@ -272,7 +271,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 		*/
 		for _, v := range rangeOfFoundStringIdxPairs(m) {
 			name := text[v[0]+2 : v[1]-2] // "::smile::" => "smile"
-			///*DEBUG*/ log.Printf("downloading %v\n", name)
 			if _, ok := emojiRepos[name]; ok {
 				continue
 			}
@@ -300,14 +298,9 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 					log.Fatalf("Failed to write content of %v into %v: %v", name, tmpfilepath, err)
 				}
 			*/
-
 			emojiRepos[name] = emojiImg
 		}
 	}
-	///*DEBUG*/ log.Printf("text=%#v\n", text)
-	///*DEBUG*/ log.Printf("m=%#v\n", m)
-	///*DEBUG*/ log.Printf("textWOEmojis=%#v\n", textWOEmojis)
-	///*DEBUG*/ log.Printf("emojiRepos=%#v\n", emojiRepos)
 
 	//
 	// calc the size of a chip
@@ -324,8 +317,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 		_ /*left*/, top, right, bottom = gc.GetStringBounds(textWOEmojis)
 		chipWidth, chipHeight = int(math.Ceil(right)), int(math.Ceil(bottom-top))
 	}
-	///*DEBUG*/ log.Println("chipImage size ", chipWidth, chipHeight)
-
 	// emojis
 	for _, v := range rangeOfFoundStringIdxPairs(m) {
 		name := text[v[0]+2 : v[1]-2] // "::smile::" => "smile"
@@ -343,7 +334,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 		}
 	}
 
-	///*DEBUG*/ log.Println("chipImage size ", chipWidth, chipHeight)
 	if chipWidth < 0 || chipHeight < 0 {
 		return test, nil
 	}
@@ -361,34 +351,20 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 	prevEndIdx := 0
 	prevEndX := float64(0)
 	for _, v := range rangeOfFoundStringIdxPairs(m) {
-		///*DEBUG*/ log.Printf("  %v: prevEndIdx=%#v\n", i, prevEndIdx)
-		///*DEBUG*/ log.Printf("  %v: prevEndX=%#v\n", i, prevEndX)
-		///*DEBUG*/ log.Printf("  %v: top=%#v\n", i, top)
-
 		// render text before each emoji
 		if v[0] != 0 {
-			///*DEBUG*/ log.Printf("    text:\n")
-			///*DEBUG*/ log.Printf("     v=%#v\n", v)
-			///*DEBUG*/ log.Printf("     text=%#v\n", text[prevEndIdx:v[0]])
-
 			// gc.Translate(prevEndX, float64(-top))
 			// tw := gc.FillString(text[prevEndIdx : v[0]-1])
 			tw := gc.FillStringAt(text[prevEndIdx:v[0]], prevEndX, float64(-top))
 			prevEndX += tw
-
-			///*DEBUG*/ log.Printf("     tw=%#v => %#v\n", tw, prevEndX)
 		}
 
 		// render an emoji
 		name := text[v[0]+2 : v[1]-2] // "::smile::" => "smile"
 		if emojiImg, ok := emojiRepos[name]; ok {
-			///*DEBUG*/ log.Printf("    emoji:\n")
-
 			b := emojiImg.Bounds()
 			ew := b.Max.X - b.Min.X
 			eh := b.Max.Y - b.Min.Y
-
-			///*DEBUG*/ log.Printf("     b=%#v\n", b)
 
 			destB := chipImage.Bounds()
 			destB.Min.X = int(prevEndX)
@@ -396,14 +372,9 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 			destB.Max.X = int(prevEndX) + ew
 			destB.Max.Y = eh
 
-			///*DEBUG*/ log.Printf("     destB=%#v\n", destB)
-
 			draw.Draw(chipImage, destB, emojiImg, image.Point{0, 0}, draw.Src)
 
 			prevEndX += float64(ew)
-
-			///*DEBUG*/ log.Printf("     ew=%#v => prevEndX=%#v\n", ew, prevEndX)
-
 		} else {
 			return nil, fmt.Errorf("Internal inconsistency about emoji %v", name)
 		}
