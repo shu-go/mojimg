@@ -42,19 +42,19 @@ var (
 )
 
 type globalCmd struct {
-	Output string `cli:"output=FILE_NAME" help:"generated file name"`
-	Type   string `cli:"type=IMAGE_FILE_TYPE" default:"png" help:"png or jpg. for stdout. (if -output is given, -type is set to the extension)"`
+	Output string `cli:"o,output=FILE" help:"generated file name"`
+	Type   string `cli:"type=IMAGE_FILE_TYPE" default:"png" help:"png or jpg. for stdout. (if --output is given, --type is set to the extension)"`
 
-	Width  int `cli:"width" default:"1024" help:"image width"`
-	Height int `cli:"height" default:"768" help:"image height"`
+	Width  int `cli:"w,width" default:"1024" help:"image width"`
+	Height int `cli:"h,height" default:"768" help:"image height"`
 
-	Pos string `cli:"pos" default:"topleft" help:"combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]"`
+	Pos string `cli:"p,pos" default:"topleft" help:"combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]"`
 
-	FontPath          string `cli:"font" required:"true" env:"MOJIMG_FONT" help:"ttf file path"`
+	FontPath          string `cli:"f,font=FILE" required:"true" env:"MOJIMG_FONT" help:"ttf file path"`
 	fontDir, fontName string
 
-	BG string `cli:"bg" default:"#ffff" , help:"#RGBA"`
-	FG string `cli:"fg" default:"#000f" , help:"#RGBA"`
+	BG string `cli:"bg" default:"#ffff" help:"#RGBA"`
+	FG string `cli:"fg" default:"#000f" help:"#RGBA"`
 }
 
 func (cmd *globalCmd) Before() error {
