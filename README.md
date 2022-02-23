@@ -1,35 +1,31 @@
-# README #
+commandline text image file generator
 
-### What is this repository for? ###
+[![Go Report Card](https://goreportcard.com/badge/github.com/shu-go/mojimg)](https://goreportcard.com/report/github.com/shu-go/mojimg)
+![MIT License](https://img.shields.io/badge/License-MIT-blue)
 
-* commandline text image file generator
 
-[![Build Status](https://drone.io/bitbucket.org/shu/mojimg/status.png)](https://drone.io/bitbucket.org/shu/mojimg/latest)
+# Usage
 
-### How do I get set up? ###
+## Preparation
 
-* Download and go build
-* Put a ttf file in "font" folder
-	* The name of ttf file must end with "mr.ttf" (this is a restriction of draw2d)
+Place a ttf font file
 
-### Binaries ###
+## Rendering text and emoji
 
-[drone.io](https://drone.io/bitbucket.org/shu/mojimg/files)
+```
+mojimg --font ./myfont.ttf --output output.png text1 text2 ::smile::
+```
 
-### Usage ###
+## Pipelining
 
-	#mojimg -h
+```
+cat(or type) output.png | mojimg --font ./myfont.ttf --output output.png --pos cm center-middle-text
+```
 
-	#mojimg -output test.jpg test1 test2
-		=> render lines ("test1" and "test2") and output test.jpg
-	#mojimg test1 test2  |  mojimg -pos middlecenter -fg #f00 -output test.jpg CENTER
-		=> pipelined rendering
-	#mojimg test.jpg test1 test2  |  wpchanger
-		=> (Windows) change the wallpaper with [wpchanger](https://bitbucket.org/shu/wpchanger)
+## Help
 
-### Dependency ###
+```
+mojimg help
+```
 
-* github.com/llgcode/draw2d
-	* rendering text
-* github.com/andrew-d/go-termutil
-	* isatty
+<!-- vim: set et ft=markdown sts=4 sw=4 ts=4 tw=0 : -->
