@@ -50,7 +50,7 @@ type globalCmd struct {
 
 	Pos string `cli:"pos" default:"topleft" help:"combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]"`
 
-	FontPath          string `cli:"font" required:"true" help:"ttf file path"`
+	FontPath          string `cli:"font" required:"true" env:"MOJIMG_FONT" help:"ttf file path"`
 	fontDir, fontName string
 
 	BG string `cli:"bg" default:"#ffff" , help:"#RGBA"`
