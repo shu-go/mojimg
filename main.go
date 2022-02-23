@@ -37,6 +37,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -49,6 +50,7 @@ import (
 
 	"github.com/andrew-d/go-termutil"
 	"github.com/llgcode/draw2d"
+	"github.com/llgcode/draw2d/draw2dbase"
 	"github.com/llgcode/draw2d/draw2dimg"
 
 	"github.com/shu-go/gli"
@@ -79,10 +81,18 @@ type globalCmd struct {
 
 	Pos string `cli:"pos" default:"topleft" help:"combination of [top | middle | bottom] and [left | center | right] or [t | m | b] and [l | c | r]"`
 
-	FontName string `cli:"font" default:"ipag" help:"ttf file name without suffix \"mr.ttf\""`
+	FontPath          string `cli:"font" help:"ttf file path"`
+	fontDir, fontName string
 
 	BG string `cli:"bg" default:"#ffff" , help:"#RGBA"`
 	FG string `cli:"fg" default:"#000f" , help:"#RGBA"`
+}
+
+func (cmd *globalCmd) Before() {
+	cmd.fontDir, cmd.fontName = filepath.Split(cmd.FontPath)
+	if cmd.fontDir == "" {
+		cmd.fontDir = "."
+	}
 }
 
 func (cmd globalCmd) Run(texts []string) error {
@@ -123,7 +133,11 @@ func (cmd globalCmd) Run(texts []string) error {
 
 	// global settings
 
-	draw2d.SetFontFolder("./font/")
+	draw2d.SetFontFolder(cmd.fontDir)
+	draw2dbase.DefaultFontData = draw2d.FontData{cmd.fontName, draw2d.FontFamilyMono, draw2d.FontStyleNormal}
+	draw2d.SetFontNamer(func(fd draw2d.FontData) string {
+		return fd.Name
+	})
 
 	// construct a rendered image
 
@@ -156,7 +170,7 @@ func (cmd globalCmd) Run(texts []string) error {
 	// chip
 	chips := make([]*Chip, 0)
 	for _, t := range texts {
-		img, err := makeChipImage(t, cmd.FontName, bg, fg)
+		img, err := makeChipImage(t, cmd.fontName, bg, fg)
 		if err != nil {
 			return err
 		}
