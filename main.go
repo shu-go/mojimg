@@ -263,12 +263,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 		}
 
 		// download images
-		/*
-			dir, err := os.Getwd()
-			if err != nil {
-				log.Fatalf("Failed to get working directory: %v", err)
-			}
-		*/
 		for _, v := range rangeOfFoundStringIdxPairs(m) {
 			name := text[v[0]+2 : v[1]-2] // "::smile::" => "smile"
 			if _, ok := emojiRepos[name]; ok {
@@ -285,19 +279,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 			if err != nil {
 				return nil, fmt.Errorf("Failed to load image of %v: %v", name, err)
 			}
-
-			/*
-				data, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					log.Fatalf("Failed to read content of %v: %v", name, err)
-				}
-
-				tmpfilepath := fmt.Sprintf("%v/%v.png", dir, name)
-				err = ioutil.WriteFile(tmpfilepath, data, os.ModePerm)
-				if err != nil {
-					log.Fatalf("Failed to write content of %v into %v: %v", name, tmpfilepath, err)
-				}
-			*/
 			emojiRepos[name] = emojiImg
 		}
 	}
@@ -353,8 +334,6 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 	for _, v := range rangeOfFoundStringIdxPairs(m) {
 		// render text before each emoji
 		if v[0] != 0 {
-			// gc.Translate(prevEndX, float64(-top))
-			// tw := gc.FillString(text[prevEndIdx : v[0]-1])
 			tw := gc.FillStringAt(text[prevEndIdx:v[0]], prevEndX, float64(-top))
 			prevEndX += tw
 		}
