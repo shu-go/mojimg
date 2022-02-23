@@ -142,7 +142,7 @@ func (cmd globalCmd) Run(texts []string) error {
 	} else {
 		baseimg, _, err := image.Decode(os.Stdin)
 		if err != nil {
-			log.Fatalf("Failed to load base image from stdin: %v", err)
+			return fmt.Errorf("Failed to load base image from stdin: %v", err)
 		}
 		b := baseimg.Bounds()
 		cmd.Width = b.Max.X - b.Min.X
@@ -157,7 +157,13 @@ func (cmd globalCmd) Run(texts []string) error {
 	// chip
 	chips := make([]*Chip, 0)
 	for _, t := range texts {
-		chip := &Chip{Image: makeChipImage(t, cmd.FontName, bg, fg), X: 0, Y: 0}
+		img, err := makeChipImage(t, cmd.FontName, bg, fg)
+		if err != nil {
+			return err
+		}
+
+		chip := &Chip{Image: img, X: 0, Y: 0}
+
 		chips = append(chips, chip)
 		//saveImage(fmt.Sprintf("chip%02d.png", i), chip.Image)
 	}
@@ -235,7 +241,7 @@ func rangeOfFoundStringIdxPairs(r [][]int) [][]int {
 	return result
 }
 
-func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
+func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error) {
 	//
 	// determine what to render
 	//
@@ -273,13 +279,13 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 
 			resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/arvida/emoji-cheat-sheet.com/master/public/graphics/emojis/%s.png", name))
 			if err != nil {
-				log.Fatalf("Failed to download emoji file of %v: %v", name, err)
+				return nil, fmt.Errorf("Failed to download emoji file of %v: %v", name, err)
 			}
 			defer resp.Body.Close()
 
 			emojiImg, _, err := image.Decode(resp.Body)
 			if err != nil {
-				log.Fatalf("Failed to load image of %v: %v", name, err)
+				return nil, fmt.Errorf("Failed to load image of %v: %v", name, err)
 			}
 
 			/*
@@ -339,7 +345,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 
 	///*DEBUG*/ log.Println("chipImage size ", chipWidth, chipHeight)
 	if chipWidth < 0 || chipHeight < 0 {
-		return test
+		return test, nil
 	}
 
 	//
@@ -399,7 +405,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 			///*DEBUG*/ log.Printf("     ew=%#v => prevEndX=%#v\n", ew, prevEndX)
 
 		} else {
-			log.Fatalf("Internal inconsistency about emoji %v", name)
+			return nil, fmt.Errorf("Internal inconsistency about emoji %v", name)
 		}
 
 		prevEndIdx = v[1]
@@ -409,7 +415,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) *image.RGBA {
 		gc.FillString(text[prevEndIdx:])
 	}
 
-	return chipImage
+	return chipImage, nil
 }
 
 func parsePosition(pos string) (string, string) {
