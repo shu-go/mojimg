@@ -141,7 +141,7 @@ func (cmd globalCmd) Run(texts []string) error {
 	// global settings
 
 	draw2d.SetFontFolder(cmd.fontDir)
-	draw2dbase.DefaultFontData = draw2d.FontData{cmd.fontName, draw2d.FontFamilyMono, draw2d.FontStyleNormal}
+	draw2dbase.DefaultFontData = draw2d.FontData{Name: cmd.fontName, Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleNormal}
 	draw2d.SetFontNamer(func(fd draw2d.FontData) string {
 		return fd.Name
 	})
@@ -314,7 +314,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 	test := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	gc := draw2dimg.NewGraphicContext(test)
 	if len(textWOEmojis) != 0 {
-		gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
+		gc.SetFontData(draw2d.FontData{Name: fontname, Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleNormal})
 		gc.SetFontSize(48)
 		_ /*left*/, top, right, bottom = gc.GetStringBounds(textWOEmojis)
 		chipWidth, chipHeight = int(math.Ceil(right)), int(math.Ceil(bottom-top))
@@ -348,7 +348,7 @@ func makeChipImage(text, fontname string, bg, fg color.RGBA) (*image.RGBA, error
 	gc = draw2dimg.NewGraphicContext(chipImage)
 	gc.SetFillColor(fg)
 	gc.SetFontSize(48)
-	gc.SetFontData(draw2d.FontData{fontname, draw2d.FontFamilyMono, draw2d.FontStyleNormal})
+	gc.SetFontData(draw2d.FontData{Name: fontname, Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleNormal})
 
 	prevEndIdx := 0
 	prevEndX := float64(0)
