@@ -1,3 +1,4 @@
+version: 2
 project_name: mojimg
 env:
   - GO111MODULE=on
@@ -21,13 +22,11 @@ builds:
     goarch:
       - amd64
       - 386
-    hooks:
-      post: upx --lzma '{{ .Path }}'
 archives:
   - name_template: '{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     format_overrides:
       - goos: windows
-        format: zip
+        formats: ['zip']
     files:
       - LICENSE*
       - README*
@@ -38,3 +37,6 @@ changelog:
       - '^test:'
 release:
   prerelease: auto
+upx:
+  - enabled: true
+    lzma: true
